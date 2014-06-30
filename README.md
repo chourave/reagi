@@ -90,7 +90,7 @@ user=> @incremented
 For a full list, see the [API docs](http://chourave.github.io/reagi/reagi.core.html).
 
 Event streams can interoperate with core.async channels using `port`
-and `subscribe`. The `port` function returns a write-only stream that
+and `subscribe`. The `port` function returns a write-only channel that
 will deliver values to the stream:
 
 ```clojure
