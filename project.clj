@@ -6,11 +6,10 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.2.374"]
                  [org.clojure/clojurescript "1.7.228"]]
-  :plugins [[codox "0.6.7"]
+  :plugins [[lein-codox "0.9.4"]
             [lein-cljsbuild "1.1.2"]]
   :source-paths ["src/cljc"]
   :test-paths ["test/clojure"]
-  :codox {:sources ["src/cljc"]}
   :cljsbuild
   {:builds [{:source-paths ["src/cljc"]
              :compiler {:output-to "target/main.js"
