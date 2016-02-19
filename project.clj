@@ -21,12 +21,13 @@
           :repl-options {:init (require '[reagi.core :as r]
                                         '[clojure.core.async
                                           :as a :refer [go go-loop <! >! <!! >!!]])}}
-   :test {:plugins [[com.cemerick/clojurescript.test "0.3.0"]]
+   :test {:plugins [[lein-doo "0.1.6"]]
+          :doo     {:build "test-build"}
           :cljsbuild
-          {:builds ^:replace [{:source-paths ["src/cljc" "test/cljs"]
-                               :compiler {:output-to "target/test.js"
-                                          :optimizations :simple}}]
-           :test-commands {"unit-tests" ["phantomjs" :runner "target/test.js"]}}}}
+          {:builds ^:replace {:test-build {:source-paths ["src/cljc" "test/cljs"]
+                                           :compiler     {:output-to     "target/test.js"
+                                                          :main          reagi.runner
+                                                          :optimizations :simple}}}}}}
   :aliases
-  {"test-cljs" ["with-profile" "test" "cljsbuild" "test"]
+  {"test-cljs" ["with-profile" "test" "doo" "nashorn" "once"]
    "test-all"  ["do" "test," "test-cljs"]})
