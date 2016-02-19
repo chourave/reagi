@@ -2,17 +2,13 @@
   "Functions and types for functional reactive programming."
   (:refer-clojure :exclude [constantly count cycle deliver filter flatten
                             map mapcat merge reduce remove time])
-  #+clj
-  (:import [clojure.lang IDeref IFn IPending])
-  #+clj
-  (:require [clojure.core :as core]
-            [clojure.core.async :as a :refer [go go-loop <! >! <!! >!!]])
-  #+cljs
-  (:require [cljs.core :as core]
-            [cljs.core.async :as a :refer [<! >!]])
-  #+cljs
-  (:require-macros [reagi.core :refer [behavior]]
-                   [cljs.core.async.macros :refer [go go-loop]]))
+  #?@(:clj [(:import [clojure.lang IDeref IFn IPending])
+            (:require [clojure.core :as core]
+                      [clojure.core.async :as a :refer [go go-loop <! >! <!! >!!]])]
+      :cljs [(:require [cljs.core :as core]
+               [cljs.core.async :as a :refer [<! >!]])
+             (:require-macros [reagi.core :refer [behavior]]
+               [cljs.core.async.macros :refer [go go-loop]])]))
 
 (defprotocol ^:no-doc Signal
   (complete? [signal]
@@ -30,7 +26,7 @@
   Boxed
   (unbox [_] x))
 
-#+clj (ns-unmap *ns* '->Completed)
+#?(:clj (ns-unmap *ns* '->Completed))
 
 (defn completed
   "Wraps x to guarantee that it will be the last value in a behavior or event
@@ -46,24 +42,24 @@
     x
     (reify Boxed (unbox [_] x))))
 
-#+clj
-(extend-protocol Boxed
-  Object (unbox [x] x)
-  nil    (unbox [x] x))
+#?(:clj
+   (extend-protocol Boxed
+     Object (unbox [x] x)
+     nil (unbox [x] x)))
 
-#+cljs
-(extend-protocol Boxed
-  default
-  (unbox [x] x))
+#?(:cljs
+   (extend-protocol Boxed
+     default
+     (unbox [x] x)))
 
 (deftype Behavior [func cache]
   IDeref
-  (#+clj deref #+cljs -deref [behavior]
+  (#?(:clj deref :cljs -deref) [behavior]
     (unbox (swap! cache #(if (instance? Completed %) % (func)))))
   Signal
   (complete? [_] (instance? Completed @cache)))
 
-#+clj (ns-unmap *ns* '->Behavior)
+#?(:clj (ns-unmap *ns* '->Behavior))
 
 (defn behavior-call
   "Takes a zero-argument function and yields a Behavior object that will
@@ -84,8 +80,9 @@
 
 (def time
   "A behavior that tracks the current time in seconds."
-  #+clj (behavior (/ (System/nanoTime) 1000000000.0))
-  #+cljs (behavior (/ (.getTime (js/Date.)) 1000.0)))
+  #?(
+     :clj (behavior (/ (System/nanoTime) 1000000000.0))
+     :cljs (behavior (/ (.getTime (js/Date.)) 1000.0))))
 
 (defn delta
   "Return a behavior that tracks the time in seconds from when it was created."
@@ -145,39 +142,39 @@
             (recur)))))
     m))
 
-#+clj
-(defn- peek!! [mult time-ms]
-  (let [ch (a/chan)]
-    (a/tap mult ch)
-    (try
-      (if time-ms
-        (first (a/alts!! [ch (a/timeout time-ms)]))
-        (<!! ch))
-      (finally
-        (a/untap mult ch)))))
+#?(:clj
+   (defn- peek!! [mult time-ms]
+     (let [ch (a/chan)]
+       (a/tap mult ch)
+       (try
+         (if time-ms
+           (first (a/alts!! [ch (a/timeout time-ms)]))
+           (<!! ch))
+         (finally
+           (a/untap mult ch))))))
 
-#+clj
-(def ^:private dependencies
-  (java.util.Collections/synchronizedMap (java.util.WeakHashMap.)))
+#?(:clj
+   (def ^:private dependencies
+     (java.util.Collections/synchronizedMap (java.util.WeakHashMap.))))
 
 (defn- depend-on
   "Protect a collection of child objects from being GCed before the parent."
   [parent children]
-  #+clj (.put dependencies parent children))
+  #?(:clj (.put dependencies parent children)))
 
-#+clj
-(defn- deref-events [mult head ms timeout-val]
-  (if-let [hd @head]
-    (unbox hd)
-    (if-let [val (peek!! mult ms)]
-      (unbox val)
-      timeout-val)))
+#?(:clj
+   (defn- deref-events [mult head ms timeout-val]
+     (if-let [hd @head]
+       (unbox hd)
+       (if-let [val (peek!! mult ms)]
+         (unbox val)
+         timeout-val))))
 
-#+cljs
-(defn- deref-events [head]
-  (if-let [hd @head]
-    (unbox hd)
-    js/undefined))
+#?(:cljs
+   (defn- deref-events [head]
+     (if-let [hd @head]
+       (unbox hd)
+       js/undefined)))
 
 (defprotocol ^:no-doc Disposable
   (dispose [x]
@@ -189,19 +186,19 @@
 
 (deftype Events [ch mult head closed disposers]
   IPending
-  #+clj (isRealized [_] (not (nil? @head)))
-  #+cljs (-realized? [_] (not (nil? @head)))
+  #?(:clj  (isRealized [_] (not (nil? @head)))
+     :cljs (-realized? [_] (not (nil? @head))))
 
   IDeref
-  #+clj (deref [self] (deref-events mult head nil nil))
-  #+cljs (-deref [self] (deref-events head))
+  #?(:clj  (deref [self] (deref-events mult head nil nil))
+     :cljs (-deref [self] (deref-events head)))
 
-  #+clj clojure.lang.IBlockingDeref
-  #+clj (deref [_ ms timeout-val] (deref-events mult head ms timeout-val))
+  #?@(:clj [clojure.lang.IBlockingDeref
+            (deref [_ ms timeout-val] (deref-events mult head ms timeout-val))])
 
   IFn
-  #+clj (invoke [stream msg] (do (>!! ch (box msg)) stream))
-  #+cljs (-invoke [stream msg] (do (go (>! ch (box msg))) stream))
+  #?(:clj  (invoke [stream msg] (do (>!! ch (box msg)) stream))
+     :cljs (-invoke [stream msg] (do (go (>! ch (box msg))) stream)))
 
   Observable
   (port [_] ch)
@@ -217,16 +214,16 @@
   (dispose [_] (doseq [d @disposers] (d)) (a/close! ch))
   (on-dispose [_ d] (swap! disposers conj d))
 
-  #+clj Object
-  #+clj (finalize [stream] (dispose stream)))
+  #?@(:clj [Object
+            (finalize [stream] (dispose stream))]))
 
-#+clj (ns-unmap *ns* '->Events)
+#?(:clj (ns-unmap *ns* '->Events))
 
 (defn- no-op [])
 
 (def ^:private no-value
-  #+clj (Object.)
-  #+cljs (js/Object.))
+  #?(:clj  (Object.)
+     :cljs (js/Object.)))
 
 (defn- no-value? [x]
   (identical? x no-value))
@@ -402,8 +399,8 @@
   (reduce #(%2 %1) init stream))
 
 (def ^:private empty-queue
-  #+clj clojure.lang.PersistentQueue/EMPTY
-  #+cljs cljs.core.PersistentQueue.EMPTY)
+  #?(:clj  clojure.lang.PersistentQueue/EMPTY
+     :cljs cljs.core.PersistentQueue.EMPTY))
 
 (defn buffer
   "Buffer all the events in the stream. A maximum buffer size may be specified,
@@ -443,8 +440,8 @@
        (map first)))
 
 (defn- time-ms []
-  #+clj (System/currentTimeMillis)
-  #+cljs (.getTime (js/Date.)))
+  #?(:clj  (System/currentTimeMillis)
+     :cljs (.getTime (js/Date.))))
 
 (defn- throttle-ch [timeout-ms in out]
   (go-loop [t0 0]
@@ -470,8 +467,8 @@
         (let [[_ port] (a/alts! [stop (a/timeout interval)])]
           (when (not= port stop)
             (let [val @ref]
-              #+clj  (>! out (box val))
-              #+cljs (when-not (undefined? val) (>! out (box val)))
+              #?(:clj  (>! out (box val))
+                 :cljs (when-not (undefined? val) (>! out (box val))))
               (when-not (and (signal? ref) (complete? ref))
                 (recur))))))
       (a/close! out)))
