@@ -481,8 +481,8 @@
       (on-dispose #(a/close! stop)))))
 
 (defn wait
-  "Returns a channel that will complete unrealized after specified number of
-  milliseconds."
+  "Returns an event stream that will complete unrealized after specified number
+  of milliseconds."
   [time-ms]
   (let [stream (events)]
     (go (<! (a/timeout time-ms))
