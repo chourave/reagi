@@ -327,22 +327,24 @@
       (on-dispose #(close-all! chs))
       (depend-on streams))))
 
-(defn- mapcat-ch [f in out]
-  (go-loop []
-    (if-let [msg (<! in)]
-      (let [xs (f (unbox msg))]
-        (doseq [x xs] (>! out (box x)))
-          (recur))
-      (a/close! out))))
+(defn- process-ch [xf in out]
+  (let [ch (a/chan 1 xf)]
+    (a/pipe in ch)
+    (a/pipe ch out)))
+
+(defn transform
+  "Transform a stream through a transducer."
+  ([xf stream]
+     (let [ch (listen stream (a/chan))]
+       (doto (events)
+         (connect-port process-ch (comp (core/map unbox) xf) ch)
+         (on-dispose #(a/close! ch))
+         (depend-on [stream])))))
 
 (defn mapcat
   "Mapcat a function over a stream."
   ([f stream]
-     (let [ch (listen stream (a/chan))]
-       (doto (events)
-         (connect-port mapcat-ch f ch)
-         (on-dispose #(a/close! ch))
-         (depend-on [stream]))))
+     (transform (core/mapcat f) stream))
   ([f stream & streams]
      (mapcat (partial apply f) (apply zip stream streams))))
 
