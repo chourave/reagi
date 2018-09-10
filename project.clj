@@ -30,6 +30,7 @@
                                         '[clojure.core.async
                                           :as a :refer [go go-loop <! >! <!! >!!]])}}
    :test {:plugins [[com.cemerick/clojurescript.test "0.3.0"]]
+          :dependencies [[clj-async-test "0.0.5"]]
           :cljsbuild
           {:builds ^:replace [{:source-paths ["target/classes" "test/cljs"]
                                :compiler {:output-to "target/test.js"}}]
