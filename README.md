@@ -1,6 +1,6 @@
 # Reagi
 
-[![Build Status](https://travis-ci.org/weavejester/reagi.png?branch=master)](https://travis-ci.org/weavejester/reagi)
+[![Build Status](https://travis-ci.org/chourave/reagi.png?branch=master)](https://travis-ci.org/chourave/reagi)
 
 Reagi is an [FRP][1] library for Clojure and ClojureScript, built on
 top of [core.async][2]. It provides tools to model and manipulation
