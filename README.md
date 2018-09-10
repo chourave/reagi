@@ -13,7 +13,7 @@ values that change over time.
 
 Add the following dependency to your `project.clj` file:
 
-    [chourave/reagi "0.10.1"]
+    [chourave/reagi "0.11.0-SNAPSHOT"]
 
 ## Overview
 
