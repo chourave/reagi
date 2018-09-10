@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.298.0-2a82a1-alpha"]
                  [org.clojure/clojurescript "0.0-3196"]]
-  :plugins [[codox "0.6.7"]
+  :plugins [[lein-codox "0.10.4"]
             [lein-cljsbuild "1.0.3"]
             [com.keminglabs/cljx "0.3.2"]]
   :source-paths ["src/clojure" "src/cljs"]
