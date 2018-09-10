@@ -381,6 +381,7 @@
       (r/map #(reset! a %) s)
       (Thread/sleep 100)
       (System/gc)
+      (Thread/sleep 100)
       (deliver! s 1)
       (is (nil? @a)))))
 
