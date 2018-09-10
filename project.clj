@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.298.0-2a82a1-alpha"]
-                 [org.clojure/clojurescript "0.0-2202"]]
+                 [org.clojure/clojurescript "0.0-2665"]]
   :plugins [[codox "0.6.7"]
             [lein-cljsbuild "1.0.3"]
             [com.keminglabs/cljx "0.3.2"]]
@@ -24,7 +24,7 @@
   {:builds [{:source-paths ["target/classes"]
              :compiler {:output-to "target/main.js"}}]}
   :profiles
-  {:dev  {:plugins [[com.cemerick/austin "0.1.4"]]
+  {:dev  {:plugins [[com.cemerick/austin "0.1.6"]]
           :dependencies [[criterium "0.4.2"]]
           :repl-options {:init (require '[reagi.core :as r]
                                         '[clojure.core.async
