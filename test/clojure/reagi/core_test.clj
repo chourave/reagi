@@ -441,7 +441,7 @@
       (deliver! e1 (r/completed 2))
       (is (= (deref! j) 2))
       (deliver! e2 3)
-      (is (= (deref! j) 3))))
+      (is (eventually (= (deref! j) 3)))))
   (testing "blocking"
     (let [e1 (r/events)
           e2 (r/events)
