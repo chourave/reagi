@@ -6,8 +6,19 @@ Reagi is an [FRP][1] library for Clojure and ClojureScript, built on
 top of [core.async][2]. It provides tools to model and manipulation
 values that change over time.
 
+This is a brushed-up [fork][3] of James Reeve’s version. It uses more
+up to date dependencies, and fixes a few issues with continuous
+integration in the hope that this will make it more amendable to
+future changes and pull requests.
+
+While we use a new artifact name, `chourave/reagi`, to avoid any
+confusion, this still aims to be a drop-in replacement for the
+original reagi, which is why we still use the same clojure namespace
+as the original reagi, namely `reagi.core`.
+
 [1]: http://en.wikipedia.org/wiki/Functional_reactive_programming
 [2]: https://github.com/clojure/core.async
+[3]: https://github.com/weavejester/reagi/issues/11#issuecomment-419004351
 
 ## Installation
 
