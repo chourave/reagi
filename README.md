@@ -76,7 +76,7 @@ user=> @incremented
 3
 ```
 
-For a full list, see the [API docs](http://weavejester.github.io/reagi/reagi.core.html).
+For a full list, see the [API docs](http://chourave.github.io/reagi/reagi.core.html).
 
 Event streams can interoperate with core.async channels using `port`
 and `subscribe`. The `port` function returns a write-only stream that
@@ -137,7 +137,7 @@ true
 
 ## Documentation
 
-* [API Docs](http://weavejester.github.io/reagi/reagi.core.html)
+* [API Docs](http://chourave.github.io/reagi/reagi.core.html)
 
 
 ## Differences in ClojureScript version
