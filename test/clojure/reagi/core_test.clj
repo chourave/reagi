@@ -1,5 +1,6 @@
 (ns reagi.core-test
   (:require [clojure.test :refer :all]
+            [clj-async-test.core :refer :all]
             [reagi.core :as r]
             [clojure.core.async :refer (chan >!! <!! close! pipe thread)]))
 
@@ -368,8 +369,7 @@
           a (atom 1)]
       (deliver! s (r/sample 100 a))
       (deliver! s (r/once 0))
-      (Thread/sleep 120)
-      (is (= (deref! f) 1))
+      (is (eventually(= (deref! f) 1)))
       (System/gc)
       (Thread/sleep 100)
       (reset! a 2)
