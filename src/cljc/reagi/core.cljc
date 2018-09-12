@@ -411,23 +411,10 @@
              empty-queue
              stream)))
 
-(defn- uniq-ch [in out]
-  (go-loop [prev no-value]
-    (if-let [msg (<! in)]
-      (let [val (unbox msg)]
-        (if (or (no-value? prev) (not= val prev))
-          (>! out (box val)))
-        (recur val))
-      (a/close! out))))
-
 (defn uniq
   "Remove any successive duplicates from the stream."
   [stream]
-  (let [ch (listen stream (a/chan))]
-    (doto (events)
-      (connect-port uniq-ch ch)
-      (on-dispose #(a/close! ch))
-      (depend-on [stream]))))
+  (transform (distinct) stream))
 
 (defn cycle
   "Incoming events cycle a sequence of values. Useful for switching between
