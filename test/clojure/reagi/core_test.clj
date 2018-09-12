@@ -202,6 +202,12 @@
       (Thread/sleep 20)
       (is (= (deref! z) [1 3])))))
 
+(deftest test-transform
+  (let [s (r/events)
+        e (r/transform (map inc) s)]
+    (deliver! s 1)
+    (is (eventually (= (deref! e) 2)))))
+
 (deftest test-map
   (testing "Basic operation"
     (let [s (r/events)

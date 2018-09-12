@@ -238,6 +238,14 @@
           (is (= @z [1 3]))
           (done)))))
 
+(deftest test-transform
+  (async done
+    (let [s (r/events)
+          e (r/transform (map inc) s)]
+      (go (<! (deliver! s 1))
+          (is (= 2 @e))
+          (done)))))
+
 (deftest test-map-basic
   (async done
     (let [s (r/events)

@@ -325,6 +325,15 @@
       (on-dispose #(close-all! chs))
       (depend-on streams))))
 
+(defn transform
+  "Transform a stream through a transducer."
+  [xf stream]
+  (let [ch (listen stream (a/chan 1 (comp (core/map unbox) xf)))]
+    (doto (events)
+      (connect-port a/pipe ch)
+      (on-dispose #(a/close! ch))
+      (depend-on [stream]))))
+
 (defn- mapcat-ch [f in out]
   (go-loop []
     (if-let [msg (<! in)]
