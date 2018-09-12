@@ -351,7 +351,7 @@
 (defn filter
   "Filter a stream by a predicate."
   [pred stream]
-  (mapcat #(if (pred %) (list %)) stream))
+  (transform (core/filter pred) stream))
 
 (defn remove
   "Remove all items in a stream the predicate matches."
