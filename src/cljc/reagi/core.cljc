@@ -343,8 +343,10 @@
 
 (defn map
   "Map a function over a stream."
-  [f & streams]
-  (apply mapcat (comp list f) streams))
+  ([f stream]
+   (transform (core/map f) stream))
+  ([f stream & streams]
+   (map (partial apply f) (apply zip stream streams))))
 
 (defn filter
   "Filter a stream by a predicate."
