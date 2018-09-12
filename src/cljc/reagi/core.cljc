@@ -276,7 +276,9 @@
   The events from the stream cannot include nil. The channel will be closed when
   the event stream is complete."
   [stream channel]
-  (listen stream (a/map> unbox channel))
+  (let [ch (a/chan 1 (core/map unbox))]
+    (a/pipe ch channel)
+    (listen stream ch))
   (depend-on channel [stream])
   channel)
 
