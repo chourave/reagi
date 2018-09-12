@@ -469,7 +469,7 @@
   (testing "once"
     (let [j (r/join (r/once 1) (r/once 2) (r/once 3))]
       (is (eventually (realized? j)))
-      (is (r/complete? j))
+      (is (eventually (r/complete? j)))
       (is (= (deref! j) 3)))))
 
 (deftest test-flatten
