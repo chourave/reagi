@@ -219,8 +219,6 @@
 
 #?(:clj (ns-unmap *ns* '->Events))
 
-(defn- no-op [])
-
 (def ^:private no-value
   #?(:clj  (Object.)
      :cljs (js/Object.)))
