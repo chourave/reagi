@@ -429,7 +429,7 @@
     (is (not (r/complete? w)))
     (Thread/sleep 110)
     (is (not (realized? w)))
-    (is (r/complete? w))))
+    (is (eventually (r/complete? w)))))
 
 (deftest test-join
   (testing "basic sequence"
