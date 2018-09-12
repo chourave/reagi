@@ -334,24 +334,12 @@
       (on-dispose #(a/close! ch))
       (depend-on [stream]))))
 
-(defn- mapcat-ch [f in out]
-  (go-loop []
-    (if-let [msg (<! in)]
-      (let [xs (f (unbox msg))]
-        (doseq [x xs] (>! out (box x)))
-          (recur))
-      (a/close! out))))
-
 (defn mapcat
   "Mapcat a function over a stream."
   ([f stream]
-     (let [ch (listen stream (a/chan))]
-       (doto (events)
-         (connect-port mapcat-ch f ch)
-         (on-dispose #(a/close! ch))
-         (depend-on [stream]))))
+   (transform (core/mapcat f) stream))
   ([f stream & streams]
-     (mapcat (partial apply f) (apply zip stream streams))))
+   (mapcat (partial apply f) (apply zip stream streams))))
 
 (defn map
   "Map a function over a stream."
