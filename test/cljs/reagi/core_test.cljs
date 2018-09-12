@@ -15,9 +15,7 @@
         b (r/behavior (+ 1 @a))]
     (is (= @b 2))
     (swap! a inc)
-    (is (= @b 3))))
-
-(deftest test-behavior
+    (is (= @b 3)))
   (is (r/behavior? (r/behavior "foo")))
   (is (not (r/behavior? "foo"))))
 
