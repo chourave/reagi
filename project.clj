@@ -15,12 +15,19 @@
   {:builds [{:source-paths ["src/cljc"]
              :compiler {:output-to "target/main.js"}}]}
   :profiles
-  {:1.8  {:dependencies [[org.clojure/clojure "1.8.0"]
+  {:1.7  {}
+   :1.8  {:dependencies [[org.clojure/clojure "1.8.0"]
                          [org.clojure/clojurescript "1.8.51"]]}
    :1.9  {:dependencies [[org.clojure/clojure "1.9.0"]
                          [org.clojure/clojurescript "1.9.946"]]}
    :1.10 {:dependencies [[org.clojure/clojure "1.10.0-alpha8"]
                          [org.clojure/clojurescript "1.10.339"]]}
+   :with-xml { ; Needed for cljs < 1.10 to work with java >= 9
+              :jvm-opts ~(let [version     (System/getProperty "java.version")
+                               [major _ _] (clojure.string/split version #"\.")]
+                           (if (>= (java.lang.Integer/parseInt major) 9)
+                             ["--add-modules" "java.xml.bind"]
+                             []))}
    :dev  {:plugins [[com.cemerick/austin "0.1.6"]]
           :dependencies [[criterium "0.4.2"]]
           :repl-options {:init (require '[reagi.core :as r]
