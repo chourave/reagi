@@ -2,6 +2,12 @@ dist: trusty
 sudo: false 
 language: clojure
 script: lein test-all
-jdk:
-  - openjdk7
-  - openjdk6
+matrix:
+  include:
+    - addons:
+        apt:
+          packages:
+            - openjdk-6-jdk
+      jdk: openjdk6
+      before_install: jdk_switcher use openjdk6 # Needed because travis tries (and fails) to switch to jdk6 before insalling it
+    - jdk: openjdk7
