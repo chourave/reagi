@@ -4,13 +4,27 @@
             [reagi.core :as r]
             [clojure.core.async :refer (chan >!! <!! close! pipe thread)]))
 
-(defmacro lastingly
-  [body]
-  `(and
-    ~body
-    (do
-      (Thread/sleep 50)
-      ~body)))
+(defmethod assert-expr 'lastingly [msg form-with-keyword]
+  (let [form (second form-with-keyword)
+        args (rest form)
+        pred (first form)]
+    `(let [values# (list ~@args)
+           result# (apply ~pred values#)]
+       (if result#
+         (do
+           (Thread/sleep 50)
+           (let [values# (list ~@args)
+                 result# (apply ~pred values#)]
+             (if result#
+               (do-report {:type :pass, :message ~msg,
+                           :expected '~form, :actual (cons ~pred values#)})
+               (do-report {:type :fail, :message ~msg,
+                           :expected '~form, :actual (list '~'not (cons '~pred values#))}))
+             result#))
+         (do
+           (do-report {:type :fail, :message ~msg,
+                       :expected '~form, :actual (list '~'not (cons '~pred values#))})
+           result#)))))
 
 (deftest test-signal?
   (is (r/signal? (r/behavior 1)))
@@ -352,7 +366,8 @@
    (reset)
    (System/gc)
    (trigger)
-   (lastingly (probe))))
+   (Thread/sleep 100)
+   (probe)))
 
 (deftest test-gc
   (testing "derived maps"
