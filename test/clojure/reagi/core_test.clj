@@ -4,6 +4,14 @@
             [reagi.core :as r]
             [clojure.core.async :refer (chan >!! <!! close! pipe thread)]))
 
+(defmacro lastingly
+  [body]
+  `(and
+    ~body
+    (do
+      (Thread/sleep 50)
+      ~body)))
+
 (deftest test-signal?
   (is (r/signal? (r/behavior 1)))
   (is (r/signal? (r/events)))
@@ -105,16 +113,14 @@
       (is (eventually (= (deref! e) 2)))
       (is (r/complete? e))
       (r/deliver e 3)
-      (Thread/sleep 20)
-      (is (= (deref! e) 2))))
+      (is (lastingly (= (deref! e) 2)))))
   (testing "initialized events"
     (let [e (r/events (r/completed 1))]
       (is (realized? e))
       (is (= (deref! e) 1))
       (is (r/complete? e))
       (r/deliver e 2)
-      (Thread/sleep 20)
-      (is (= (deref! e) 1))))
+      (is (lastingly (= (deref! e) 1)))))
   (testing "derived events"
     (let [e (r/events)
           m (r/map inc e)]
@@ -124,8 +130,7 @@
       (is (eventually (= (deref! m) 3)))
       (is (r/complete? m))
       (r/deliver e 3)
-      (Thread/sleep 20)
-      (is (= (deref! m) 3))))
+      (is (lastingly (= (deref! m) 3)))))
   (testing "closed channel"
     (let [e (r/events)]
       (>!! (r/port e) 1)
@@ -230,8 +235,7 @@
   (let [s (r/events)
         e (r/filter even? s)]
     (r/deliver s 1)
-    (Thread/sleep 20)
-    (is (not (realized? e)))
+    (is (lastingly (not (realized? e))))
     (r/deliver s 2 3)
     (is (eventually (= (deref! e) 2)))))
 
@@ -239,8 +243,7 @@
   (let [s (r/events)
         e (r/remove even? s)]
     (r/deliver s 0)
-    (Thread/sleep 20)
-    (is (not (realized? e)))
+    (is (lastingly (not (realized? e))))
     (r/deliver s 1 2)
     (is (eventually (= (deref! e) 1)))))
 
@@ -334,13 +337,14 @@
   (let [s (r/events)
         e (r/throttle 100 s)]
     (r/deliver s 1 2)
-    (Thread/sleep 20)
-    (is (= (deref! e) 1))
+    (is (eventually (= (deref! e) 1)))
+    (is (lastingly (= (deref! e) 1)))
     (Thread/sleep 101)
     (r/deliver s 3)
     (Thread/sleep 50)
     (r/deliver s 4)
-    (is (= (deref! e) 3))))
+    (is (eventually (= (deref! e) 3)))
+    (is (lastingly (= (deref! e) 3)))))
 
 (deftest test-gc
   (testing "derived maps"
@@ -380,8 +384,7 @@
       (System/gc)
       (Thread/sleep 100)
       (r/deliver s 1)
-      (Thread/sleep 20)
-      (is (nil? @a)))))
+      (is (lastingly (nil? @a))))))
 
 (deftest test-sample
   (testing "basic usage"
