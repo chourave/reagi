@@ -138,7 +138,7 @@
       (is (not (r/complete? e)))
       (close! (r/port e))
       (is (= (deref! e) 1))
-      (is (r/complete? e)))))
+      (is (eventually (r/complete? e))))))
 
 (deftest test-subscribe
   (testing "values"
