@@ -1,7 +1,11 @@
 dist: trusty
 sudo: false 
 language: clojure
-script: lein with-profiles $PROFILES test-all
+script:
+  - echo travis_fold:start:get_deps
+  - lein with-profile $PROFILES deps
+  - echo travis_fold:end:get_deps
+  - lein with-profile $PROFILES test-all
 matrix:
   include:
     - addons:
