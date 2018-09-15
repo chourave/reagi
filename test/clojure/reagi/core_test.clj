@@ -151,7 +151,6 @@
     (let [e  (r/events)
           ch (chan)]
       (r/subscribe e ch)
-      (Thread/sleep 40)
       (close! (r/port e))
       (is (nil? (<!! ch))))))
 
@@ -373,18 +372,18 @@
       (r/deliver s (r/once 0))
       (is (eventually(= (deref! f) 1)))
       (System/gc)
-      (Thread/sleep 100)
       (reset! a 2)
       (is (eventually (= (deref! f) 2)))))
   (testing "GC unreferenced streams"
     (let [a (atom nil)
-          s (r/events)]
+          s (r/events)
+          test-sequence (fn []
+                          (reset! a nil)
+                          (System/gc)
+                          (r/deliver s 1)
+                          (lastingly (nil? @a)))]
       (r/map #(reset! a %) s)
-      (Thread/sleep 100)
-      (System/gc)
-      (Thread/sleep 100)
-      (r/deliver s 1)
-      (is (lastingly (nil? @a))))))
+      (is (eventually (test-sequence))))))
 
 (deftest test-sample
   (testing "basic usage"
