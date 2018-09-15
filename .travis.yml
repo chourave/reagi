@@ -11,3 +11,4 @@ matrix:
       jdk: openjdk6
       before_install: jdk_switcher use openjdk6 # Needed because travis tries (and fails) to switch to jdk6 before insalling it
     - jdk: openjdk7
+    - jdk: openjdk8
