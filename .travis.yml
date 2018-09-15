@@ -3,7 +3,7 @@ sudo: false
 language: clojure
 script:
   - echo travis_fold:start:get_deps
-  - lein with-profile $CLJ_PROFILES:$CLJS_PROFILES deps
+  - lein with-profile test:$CLJ_PROFILES:$CLJS_PROFILES deps
   - echo travis_fold:end:get_deps
   - lein with-profile $CLJ_PROFILES test
   - lein with-profile $CLJS_PROFILES test-cljs
