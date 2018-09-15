@@ -35,5 +35,5 @@
                                                           :main          reagi.runner
                                                           :optimizations :simple}}}}}}
   :aliases
-  {"test-cljs" ["with-profile" "test" "doo" "phantom" "once"]
+  {"test-cljs" ["with-profile" "+test" "doo" "phantom" "once"]
    "test-all"  ["do" "test," "test-cljs"]})
