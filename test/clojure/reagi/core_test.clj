@@ -345,6 +345,15 @@
     (is (eventually (= (deref! e) 3)))
     (is (lastingly (= (deref! e) 3)))))
 
+(defn object-collected
+  ([reset probe]
+   (object-collected reset (constantly nil) probe))
+  ([reset trigger probe]
+   (reset)
+   (System/gc)
+   (trigger)
+   (lastingly (probe))))
+
 (deftest test-gc
   (testing "derived maps"
     (let [s (r/events)
@@ -376,14 +385,12 @@
       (is (eventually (= (deref! f) 2)))))
   (testing "GC unreferenced streams"
     (let [a (atom nil)
-          s (r/events)
-          test-sequence (fn []
-                          (reset! a nil)
-                          (System/gc)
-                          (r/deliver s 1)
-                          (lastingly (nil? @a)))]
+          s (r/events)]
       (r/map #(reset! a %) s)
-      (is (eventually (test-sequence))))))
+      (is (eventually (object-collected
+                       #(reset! a nil)
+                       #(r/deliver s 1)
+                       #(nil? @a)))))))
 
 (deftest test-sample
   (testing "basic usage"
@@ -409,19 +416,16 @@
   (testing "thread ends if stream GCed"
     (let [a (atom false)]
       (r/sample 100 (r/behavior (reset! a true)))
-      (System/gc)
-      (Thread/sleep 100)
-      (reset! a false)
-      (Thread/sleep 120)
-      (is (= @a false))))
+      (is (eventually (object-collected
+                       #(reset! a false)
+                       #(= @a false))))))
   (testing "thread continues if stream not GCed"
     (let [a (atom false)
           s (r/sample 100 (r/behavior (reset! a true)))]
       (System/gc)
       (Thread/sleep 100)
       (reset! a false)
-      (Thread/sleep 120)
-      (is (= @a true)))))
+      (is (eventually (= @a true))))))
 
 (deftest test-wait
   (let [w (r/wait 100)]
