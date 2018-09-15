@@ -453,7 +453,7 @@
       (is (= (deref! s) 1))
       (r/deliver e1 (r/completed 2))
       (is (eventually (= (deref! j) 3)))
-      (is (= (deref! s) 6))))
+      (is (eventually (= (deref! s) 6)))))
   (testing "complete"
     (let [e1 (r/events)
           e2 (r/events)
