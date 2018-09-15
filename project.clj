@@ -26,7 +26,7 @@
           :repl-options {:init (require '[reagi.core :as r]
                                         '[clojure.core.async
                                           :as a :refer [go go-loop <! >! <!! >!!]])}}
-   :test {:plugins [[lein-doo "0.1.6"]]
+   :test {:plugins [[lein-doo "0.1.10"]]
           :dependencies [[clj-async-test "0.0.5"]]
           :doo     {:build "test-build"}
           :cljsbuild
