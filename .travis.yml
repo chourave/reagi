@@ -1,7 +1,7 @@
 dist: trusty
 sudo: false 
 language: clojure
-script: lein test-all
+script: lein with-profiles $PROFILES test-all
 matrix:
   include:
     - addons:
@@ -10,5 +10,11 @@ matrix:
             - openjdk-6-jdk
       jdk: openjdk6
       before_install: jdk_switcher use openjdk6 # Needed because travis tries (and fails) to switch to jdk6 before insalling it
+      env:
+        - PROFILES=test:1.8:1.9
     - jdk: openjdk7
+      env:
+        - PROFILES=test:1.8:1.9
     - jdk: openjdk8
+      env:
+        - PROFILES=test:1.8:1.9:1.10

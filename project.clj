@@ -15,7 +15,13 @@
   {:builds [{:source-paths ["src/cljc"]
              :compiler {:output-to "target/main.js"}}]}
   :profiles
-  {:dev  {:plugins [[com.cemerick/austin "0.1.6"]]
+  {:1.8  {:dependencies [[org.clojure/clojure "1.8.0"]
+                         [org.clojure/clojurescript "1.8.51"]]}
+   :1.9  {:dependencies [[org.clojure/clojure "1.9.0"]
+                         [org.clojure/clojurescript "1.9.946"]]}
+   :1.10 {:dependencies [[org.clojure/clojure "1.10.0-alpha8"]
+                         [org.clojure/clojurescript "1.10.339"]]}
+   :dev  {:plugins [[com.cemerick/austin "0.1.6"]]
           :dependencies [[criterium "0.4.2"]]
           :repl-options {:init (require '[reagi.core :as r]
                                         '[clojure.core.async

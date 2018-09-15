@@ -425,7 +425,8 @@
       (System/gc)
       (Thread/sleep 100)
       (reset! a false)
-      (is (eventually (= @a true))))))
+      (is (eventually (= @a true)))
+      s)))                              ; Prevent s from getting collected
 
 (deftest test-wait
   (let [w (r/wait 100)]
