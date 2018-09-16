@@ -233,21 +233,22 @@
   stream."
   ([] (events no-value))
   ([init]
-     (let [in     (a/chan)
-           closed (atom false)
-           head   (atom (if (no-value? init) nil (box init)))
-           out    (a/chan)
-           mult   (mult* out)]
-       (go (loop [msg init]
-             (when (instance? Completed msg)
-               (a/close! in))
+   (let [in     (a/chan)
+         closed (atom false)
+         head   (atom (if (no-value? init) nil (box init)))
+         out    (a/chan)
+         mult   (mult* out)]
+     (go (loop [msg init]
+           (if (instance? Completed msg)
+             (do (a/close! in)
+                 (while (<! in)))
              (when-let [msg (<! in)]
                (>! out msg)
                (reset! head msg)
-               (recur msg)))
-           (a/close! out)
-           (reset! closed true))
-       (Events. in mult head closed (atom [])))))
+               (recur msg))))
+         (a/close! out)
+         (reset! closed true))
+     (Events. in mult head closed (atom [])))))
 
 (defn events?
   "Return true if the object is a stream of events."
