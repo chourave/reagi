@@ -61,7 +61,7 @@
   (testing "push"
     (let [e (r/events)]
       (e 1)
-      (is (= (deref! e) 1))
+      (is (eventually (= (deref! e) 1)))
       (e 2)
       (is (eventually (= (deref! e) 2)))))
   (testing "realized?"
