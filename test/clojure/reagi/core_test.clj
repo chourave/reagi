@@ -513,4 +513,4 @@
       (is (not (r/complete? f)))
       (r/deliver e (r/completed 2))
       (is (eventually (r/complete? e)))
-      (is (r/complete? f)))))
+      (is (eventually (r/complete? f))))))
