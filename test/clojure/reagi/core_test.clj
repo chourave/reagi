@@ -74,8 +74,7 @@
           t0 (System/currentTimeMillis)]
       (is (= (deref e 100 :missing) :missing))
       (let [t1 (System/currentTimeMillis)]
-        (is (and (>= (- t1 t0) 100)
-                 (<= (- t1 t0) 110))))))
+        (is (<= 100 (- t1 t0) 110)))))
   (testing "initial value"
     (let [e (r/events 1)]
       (is (realized? e))
