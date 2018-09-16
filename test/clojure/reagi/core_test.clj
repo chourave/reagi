@@ -480,7 +480,7 @@
       (r/deliver e1 (r/completed 1))
       (r/deliver e2 (r/completed 2))
       (is (eventually (= (deref! j) 2)))
-      (is (r/complete? j))))
+      (is (eventually (r/complete? j)))))
   (testing "once"
     (let [j (r/join (r/once 1) (r/once 2) (r/once 3))]
       (is (eventually (realized? j)))
