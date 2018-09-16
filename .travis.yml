@@ -27,6 +27,9 @@ matrix:
         - CLJ_PROFILES=1.7:1.8:1.9:1.10
         - CLJS_PROFILES=1.7:1.8:1.9:1.10
     - jdk: openjdk9
+      before_install:
+        - rm "${JAVA_HOME}/lib/security/cacerts"
+        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
       env:
         - CLJ_PROFILES=1.7:1.8:1.9:1.10
         - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
