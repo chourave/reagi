@@ -35,24 +35,24 @@
 (deftest test-behavior
   (let [a (atom 1)
         b (r/behavior (+ 1 @a))]
-    (is (= @b 2))
+    (is (= 2 @b))
     (swap! a inc)
-    (is (= @b 3)))
+    (is (= 3 @b)))
   (is (r/behavior? (r/behavior "foo")))
   (is (not (r/behavior? "foo"))))
 
 (deftest test-delta
   (let [d (r/delta)]
     (Thread/sleep 110)
-    (is (> @d 0.1))
-    (is (< @d 0.5))))
+    (is (< 0.1 @d))
+    (is (> 0.5 @d))))
 
 (deftest test-boxed
-  (is (= (r/unbox 1) 1))
-  (is (= (r/unbox nil) nil))
-  (is (not= (r/box nil) nil))
-  (is (= (r/unbox (r/box nil)) nil))
-  (is (= (r/unbox (r/box 1)) 1)))
+  (is (= 1 (r/unbox 1)))
+  (is (= nil (r/unbox nil)))
+  (is (not= nil (r/box nil)))
+  (is (= nil (r/unbox (r/box nil))))
+  (is (= 1 (r/unbox (r/box 1)))))
 
 (defn- deref! [e]
   (deref e 10000 :timeout))
@@ -61,9 +61,9 @@
   (testing "push"
     (let [e (r/events)]
       (e 1)
-      (is (eventually (= (deref! e) 1)))
+      (is (eventually (= 1 (deref! e))))
       (e 2)
-      (is (eventually (= (deref! e) 2)))))
+      (is (eventually (= 2 (deref! e))))))
   (testing "realized?"
     (let [e (r/events)]
       (is (not (realized? e)))
@@ -72,20 +72,20 @@
   (testing "deref"
     (let [e  (r/events)
           t0 (System/currentTimeMillis)]
-      (is (= (deref e 100 :missing) :missing))
+      (is (= :missing (deref e 100 :missing)))
       (let [t1 (System/currentTimeMillis)]
         (is (<= 100 (- t1 t0) 750)))))
   (testing "initial value"
     (let [e (r/events 1)]
       (is (realized? e))
-      (is (= (deref! e) 1))
+      (is (= 1 (deref! e)))
       (e 2)
-      (is (eventually (= (deref! e) 2)))))
+      (is (eventually (= 2 (deref! e))))))
   (testing "channel"
     (let [e (r/events)]
       (>!! (r/port e):foo)
       (is (eventually (realized? e)))
-      (is (= (deref! e) :foo)))))
+      (is (= :foo (deref! e))))))
 
 (deftest test-events?
   (is (r/events? (r/events)))
@@ -95,14 +95,14 @@
   (let [e (r/once :foo)]
     (is (r/complete? e))
     (is (realized? e))
-    (is (= (deref! e) :foo))))
+    (is (= :foo (deref! e)))))
 
 (deftest test-deliver
   (let [e (r/events)]
     (r/deliver e 1)
-    (is (eventually (= (deref! e) 1)))
+    (is (eventually (= 1 (deref! e))))
     (r/deliver e 2 3 4)
-    (is (eventually (= (deref! e) 4)))))
+    (is (eventually (= 4 (deref! e))))))
 
 (deftest test-completed
   (testing "behaviors"
@@ -110,47 +110,47 @@
           b (r/behavior @a)]
       (reset! a 1)
       (is (not (r/complete? b)))
-      (is (= @b 1))
+      (is (= 1 @b))
       (reset! a (r/completed 2))
-      (is (= @b 2))
+      (is (= 2 @b))
       (is (r/complete? b))
       (reset! a 3)
-      (is (= @b 2))
+      (is (= 2 @b))
       (reset! a (r/completed 4))
-      (is (= @b 2))))
+      (is (= 2 @b))))
   (testing "events"
     (let [e (r/events)]
       (r/deliver e 1)
-      (is (eventually (= (deref! e) 1)))
+      (is (eventually (= 1 (deref! e))))
       (r/deliver e (r/completed 2))
-      (is (eventually (= (deref! e) 2)))
+      (is (eventually (= 2 (deref! e))))
       (is (r/complete? e))
       (r/deliver e 3)
-      (is (lastingly (= (deref! e) 2)))))
+      (is (lastingly (= 2 (deref! e))))))
   (testing "initialized events"
     (let [e (r/events (r/completed 1))]
       (is (realized? e))
-      (is (= (deref! e) 1))
+      (is (= 1 (deref! e)))
       (is (r/complete? e))
       (r/deliver e 2)
-      (is (lastingly (= (deref! e) 1)))))
+      (is (lastingly (= 1 (deref! e))))))
   (testing "derived events"
     (let [e (r/events)
           m (r/map inc e)]
       (r/deliver e 1)
-      (is (eventually (= (deref! m) 2)))
+      (is (eventually (= 2 (deref! m))))
       (r/deliver e (r/completed 2))
-      (is (eventually (= (deref! m) 3)))
+      (is (eventually (= 3 (deref! m))))
       (is (r/complete? m))
       (r/deliver e 3)
-      (is (lastingly (= (deref! m) 3)))))
+      (is (lastingly (= 3 (deref! m))))))
   (testing "closed channel"
     (let [e (r/events)]
       (>!! (r/port e) 1)
-      (is (= (deref! e) 1))
+      (is (= 1 (deref! e)))
       (is (not (r/complete? e)))
       (close! (r/port e))
-      (is (= (deref! e) 1))
+      (is (= 1 (deref! e)))
       (is (eventually (r/complete? e))))))
 
 (deftest test-subscribe
@@ -159,7 +159,7 @@
           ch (chan 1)]
       (r/subscribe e ch)
       (r/deliver e :foo)
-      (is (= (<!! ch) :foo))))
+      (is (= :foo (<!! ch)))))
   (testing "closing"
     (let [e  (r/events)
           ch (chan)]
@@ -173,18 +173,18 @@
           e2 (r/events)
           m  (r/merge e1 e2)]
       (r/deliver e1 1)
-      (is (eventually (= (deref! m) 1)))
+      (is (eventually (= 1 (deref! m))))
       (r/deliver e2 2)
-      (is (eventually (= (deref! m) 2)))))
+      (is (eventually (= 2 (deref! m))))))
   (testing "closed channels"
     (let [e1  (r/events)
           e2  (r/events)
           m   (r/merge e1 e2)]
       (>!! (r/port e1) 1)
-      (is (= (deref! m) 1))
+      (is (= 1 (deref! m)))
       (close! (r/port e1))
       (>!! (r/port e2) 2)
-      (is (eventually (= (deref! m) 2))))))
+      (is (eventually (= 2 (deref! m)))))))
 
 (deftest test-zip
   (testing "zipped streams"
@@ -193,55 +193,55 @@
           z  (r/zip e1 e2)]
       (r/deliver e1 1)
       (r/deliver e2 2)
-      (is (eventually (= (deref! z) [1 2])))
+      (is (eventually (= [1 2] (deref! z))))
       (r/deliver e1 3)
-      (is (eventually (= (deref! z) [3 2])))
+      (is (eventually (= [3 2] (deref! z))))
       (r/deliver e2 4)
-      (is (eventually (= (deref! z) [3 4])))))
+      (is (eventually (= [3 4] (deref! z))))))
   (testing "closed channels"
     (let [e1  (r/events)
           e2  (r/events)
           z   (r/zip e1 e2)]
       (>!! (r/port e1) 1)
       (>!! (r/port e2) 2)
-      (is (= (deref! z) [1 2]))
+      (is (= [1 2] (deref! z)))
       (close! (r/port e1))
       (>!! (r/port e2) 3)
-      (is (eventually (= (deref! z) [1 3]))))))
+      (is (eventually (= [1 3] (deref! z)))))))
 
 (deftest test-transform
   (let [s (r/events)
         e (r/transform (map inc) s)]
     (r/deliver s 1)
-    (is (eventually (= (deref! e) 2)))))
+    (is (eventually (= 2 (deref! e))))))
 
 (deftest test-map
   (testing "Basic operation"
     (let [s (r/events)
           e (r/map inc s)]
       (r/deliver s 1)
-      (is (eventually (= (deref! e) 2)))))
+      (is (eventually (= 2 (deref! e))))))
   (testing "Multiple streams"
     (let [s1 (r/events)
           s2 (r/events)
           e  (r/map + s1 s2)]
       (r/deliver s1 4)
       (r/deliver s2 6)
-      (is (eventually (= (deref! e) 10))))))
+      (is (eventually (= 10 (deref! e)))))))
 
 (deftest test-mapcat
   (testing "Basic operation"
     (let [s (r/events)
           e (r/mapcat (comp list inc) s)]
       (r/deliver s 1)
-      (is (eventually (= (deref! e) 2)))))
+      (is (eventually (= 2 (deref! e))))))
   (testing "Multiple streams"
     (let [s1 (r/events)
           s2 (r/events)
           e  (r/mapcat (comp list +) s1 s2)]
       (r/deliver s1 2)
       (r/deliver s2 3)
-      (is (eventually (= (deref! e) 5))))))
+      (is (eventually (= 5 (deref! e)))))))
 
 (deftest test-filter
   (let [s (r/events)
@@ -249,7 +249,7 @@
     (r/deliver s 1)
     (is (lastingly (not (realized? e))))
     (r/deliver s 2 3)
-    (is (eventually (= (deref! e) 2)))))
+    (is (eventually (= 2 (deref! e))))))
 
 (deftest test-remove
   (let [s (r/events)
@@ -257,7 +257,7 @@
     (r/deliver s 0)
     (is (lastingly (not (realized? e))))
     (r/deliver s 1 2)
-    (is (eventually (= (deref! e) 1)))))
+    (is (eventually (= 1 (deref! e))))))
 
 (deftest test-reduce
   (testing "no initial value"
@@ -266,24 +266,24 @@
       (is (not (realized? e)))
       (r/deliver s 1)
       (is (eventually (realized? e)))
-      (is (= (deref! e) 1))
+      (is (= 1 (deref! e)))
       (r/deliver s 2)
-      (is (eventually (= (deref! e) 3)))
+      (is (eventually (= 3 (deref! e))))
       (r/deliver s 3 4)
-      (is (eventually (= (deref! e) 10)))))
+      (is (eventually (= 10 (deref! e))))))
   (testing "initial value"
     (let [s (r/events)
           e (r/reduce + 0 s)]
       (is (realized? e))
-      (is (= (deref! e) 0))
+      (is (= 0 (deref! e)))
       (r/deliver s 1)
-      (is (eventually (= (deref! e) 1)))
+      (is (eventually (= 1 (deref! e))))
       (r/deliver s 2 3)
-      (is (eventually (= (deref! e) 6)))))
+      (is (eventually (= 6 (deref! e))))))
   (testing "initial value persists"
     (let [s (r/events)
           e (r/map inc (r/reduce + 0 s))]
-      (is (= (deref e 1000 :timeout) 1)))))
+      (is (= 1 (deref e 1000 :timeout))))))
 
 (deftest test-buffer
   (testing "unlimited buffer"
@@ -291,22 +291,22 @@
           b (r/buffer s)]
       (is (empty? (deref! b)))
       (r/deliver s 1)
-      (is (eventually (= (deref! b) [1])))
+      (is (eventually (= [1] (deref! b))))
       (r/deliver s 2 3 4 5)
-      (is (eventually (= (deref! b) [1 2 3 4 5])))))
+      (is (eventually (= [1 2 3 4 5] (deref! b))))))
   (testing "limited buffer"
     (let [s (r/events)
           b (r/buffer 3 s)]
       (is (empty? (deref! b)))
       (r/deliver s 1)
-      (is (eventually (= (deref! b) [1])))
+      (is (eventually (= [1] (deref! b))))
       (r/deliver s 2 3 4 5)
-      (is (eventually (= (deref! b) [3 4 5])))))
+      (is (eventually (= [3 4 5] (deref! b))))))
   (testing "smallest buffer"
     (let [s (r/events)
           b (r/buffer 1 s)]
       (r/deliver s 2 3 4 5)
-      (is (eventually (= (deref! b) [5])))))
+      (is (eventually (= [5] (deref! b))))))
   (testing "preconditions"
     (is (thrown? AssertionError (r/buffer 0 (r/events))))
     (is (thrown? AssertionError (r/buffer 1.0 (r/events))))))
@@ -322,11 +322,11 @@
 (deftest test-count
   (let [e (r/events)
         c (r/count e)]
-    (is (= (deref! c) 0))
+    (is (= 0 (deref! c)))
     (r/deliver e 1)
-    (is (eventually (= (deref! c) 1)))
+    (is (eventually (= 1 (deref! c))))
     (r/deliver e 2 3)
-    (is (eventually (= (deref! c) 3)))))
+    (is (eventually (= 3 (deref! c))))))
 
 (deftest test-cycle
   (let [s (r/events)
@@ -342,21 +342,21 @@
         e (r/constantly 1 s)
         a (r/reduce + 0 e)]
     (r/deliver s 2 4 5)
-    (is (eventually (= (deref! e) 1)))
-    (is (eventually (= (deref! a) 3)))))
+    (is (eventually (= 1 (deref! e))))
+    (is (eventually (= 3 (deref! a))))))
 
 (deftest test-throttle
   (let [s (r/events)
         e (r/throttle 500 s)]
     (r/deliver s 1 2)
-    (is (eventually (= (deref! e) 1)))
-    (is (lastingly (= (deref! e) 1)))
+    (is (eventually (= 1 (deref! e))))
+    (is (lastingly (= 1 (deref! e))))
     (Thread/sleep 501)
     (r/deliver s 3)
     (Thread/sleep 100)
     (r/deliver s 4)
-    (is (eventually (= (deref! e) 3)))
-    (is (lastingly (= (deref! e) 3)))))
+    (is (eventually (= 3 (deref! e))))
+    (is (lastingly (= 3 (deref! e))))))
 
 (defn object-collected
   ([reset probe]
@@ -374,29 +374,29 @@
           e (r/map inc (r/map inc s))]
       (System/gc)
       (r/deliver s 1)
-      (is (eventually (= (deref! e) 3)))))
+      (is (eventually (= 3 (deref! e))))))
   (testing "merge"
     (let [s (r/events)
           e (r/merge (r/map inc s))]
       (System/gc)
       (r/deliver s 1)
-      (is (eventually (= (deref! e) 2)))))
+      (is (eventually (= 2 (deref! e))))))
   (testing "zip"
     (let [s (r/events)
           e (r/zip (r/map inc s) (r/map dec s))]
       (System/gc)
       (r/deliver s 1)
-      (is (eventually (= (deref! e) [2 0])))))
+      (is (eventually (= [2 0] (deref! e))))))
   (testing "flatten"
     (let [s (r/events)
           f (r/flatten s)
           a (atom 1)]
       (r/deliver s (r/sample 100 a))
       (r/deliver s (r/once 0))
-      (is (eventually(= (deref! f) 1)))
+      (is (eventually(= 1 (deref! f))))
       (System/gc)
       (reset! a 2)
-      (is (eventually (= (deref! f) 2)))))
+      (is (eventually (= 2 (deref! f))))))
   (testing "GC unreferenced streams"
     (let [a (atom nil)
           s (r/events)]
@@ -411,10 +411,10 @@
     (let [a (atom 0)
           t0 (System/currentTimeMillis)
           s (r/sample 250 a)]
-      (is (= (deref! s) 0))
+      (is (= 0 (deref! s)))
       (swap! a inc)
-      (is (= (deref! s) 0))
-      (is (eventually (= (deref! s) 1)))
+      (is (= 0 (deref! s)))
+      (is (eventually (= 1 (deref! s))))
       (let [t1 (System/currentTimeMillis)]
         (is (<= 250 (- t1 t0))))))
   (testing "completed"
@@ -424,10 +424,10 @@
           s (r/sample 100 b)]
       (is (eventually (realized? s)))
       (is (lastingly (not (r/complete? s))))
-      (is (= @s 0))
+      (is (= 0 @s))
       (reset! a (r/completed 1))
       (is (eventually (r/complete? s)))
-      (is (eventually (= @s 1)))
+      (is (eventually (= 1 @s)))
       (let [t1 (System/currentTimeMillis)]
         (is (<= 100 (- t1 t0))))))
   (testing "thread ends if stream GCed"
@@ -441,7 +441,7 @@
           s (r/sample 100 (r/behavior (reset! a true)))]
       (System/gc)
       (reset! a false)
-      (is (eventually (= @a true)))
+      (is (eventually (= true @a)))
       s)))                              ; Prevent s from getting collected
 
 (deftest test-wait
@@ -460,11 +460,11 @@
           e2 (r/events)
           j  (r/join e1 e2)]
       (r/deliver e1 1)
-      (is (eventually (= (deref! j) 1)))
+      (is (eventually (= 1 (deref! j))))
       (r/deliver e1 (r/completed 2))
-      (is (eventually (= (deref! j) 2)))
+      (is (eventually (= 2 (deref! j))))
       (r/deliver e2 3)
-      (is (eventually (= (deref! j) 3)))))
+      (is (eventually (= 3 (deref! j))))))
   (testing "blocking"
     (let [e1 (r/events)
           e2 (r/events)
@@ -472,24 +472,24 @@
           s  (r/reduce + j)]
       (r/deliver e1 1)
       (r/deliver e2 3)
-      (is (eventually (= (deref! j) 1)))
+      (is (eventually (= 1 (deref! j))))
       (is (= (deref! s) 1))
       (r/deliver e1 (r/completed 2))
-      (is (eventually (= (deref! j) 3)))
-      (is (eventually (= (deref! s) 6)))))
+      (is (eventually (= 3 (deref! j))))
+      (is (eventually (= 6 (deref! s))))))
   (testing "complete"
     (let [e1 (r/events)
           e2 (r/events)
           j  (r/join e1 e2)]
       (r/deliver e1 (r/completed 1))
       (r/deliver e2 (r/completed 2))
-      (is (eventually (= (deref! j) 2)))
+      (is (eventually (= 2 (deref! j))))
       (is (eventually (r/complete? j)))))
   (testing "once"
     (let [j (r/join (r/once 1) (r/once 2) (r/once 3))]
       (is (eventually (realized? j)))
       (is (eventually (r/complete? j)))
-      (is (= (deref! j) 3)))))
+      (is (= 3 (deref! j))))))
 
 (deftest test-flatten
   (testing "basic operation"
@@ -500,12 +500,12 @@
       (r/deliver es e1)
       (r/deliver e1 1)
       (is (eventually (realized? f)))
-      (is (= (deref! f) 1))
+      (is (= 1 (deref! f)))
       (r/deliver es e2)
       (r/deliver e2 2)
-      (is (eventually (= (deref! f) 2)))
+      (is (eventually (= 2 (deref! f))))
       (r/deliver e1 3)
-      (is (eventually (= (deref! f) 3)))))
+      (is (eventually (= 3 (deref! f))))))
   (testing "completion"
     (let [es (r/events)
           f  (r/flatten es)

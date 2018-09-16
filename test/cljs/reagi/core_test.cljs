@@ -13,9 +13,9 @@
 (deftest test-behavior
   (let [a (atom 1)
         b (r/behavior (+ 1 @a))]
-    (is (= @b 2))
+    (is (= 2 @b))
     (swap! a inc)
-    (is (= @b 3)))
+    (is (= 3 @b)))
   (is (r/behavior? (r/behavior "foo")))
   (is (not (r/behavior? "foo"))))
 
@@ -24,16 +24,16 @@
     (let [d (r/delta)]
       (go (<! (timeout 110))
           (let [val @d]
-            (is (> val 0.1))
-            (is (< val 0.2))
+            (is (< 0.1 val))
+            (is (> 0.2 val))
             (done))))))
 
 (deftest test-boxed
-  (is (= (r/unbox 1) 1))
-  (is (= (r/unbox nil) nil))
-  (is (not= (r/box nil) nil))
-  (is (= (r/unbox (r/box nil)) nil))
-  (is (= (r/unbox (r/box 1)) 1)))
+  (is (= 1 (r/unbox 1)))
+  (is (= nil (r/unbox nil)))
+  (is (not= nil (r/box nil)))
+  (is (= nil (r/unbox (r/box nil))))
+  (is (= 1 (r/unbox (r/box 1)))))
 
 (deftest test-event-push
   (async done
@@ -63,10 +63,10 @@
   (async done
     (let [e (r/events 1)]
       (is (realized? e))
-      (is (= @e 1))
+      (is (= 1 @e))
       (go (e 2)
           (<! (timeout 20))
-          (is (= @e 2))
+          (is (= 2 @e))
           (done)))))
 
 (deftest test-event-channel
@@ -75,7 +75,7 @@
       (go (>! (r/port e) :foo)
           (<! (timeout 20))
           (is (realized? e))
-          (is (= @e :foo))
+          (is (= :foo @e))
           (done)))))
 
 (deftest test-events?
@@ -86,7 +86,7 @@
   (let [e (r/once :foo)]
     (is (r/complete? e))
     (is (realized? e))
-    (is (= @e :foo))))
+    (is (= :foo @e))))
 
 (defn- deliver! [stream & msgs]
   (go (apply r/deliver stream msgs)
@@ -106,35 +106,35 @@
         b (r/behavior @a)]
     (reset! a 1)
     (is (not (r/complete? b)))
-    (is (= @b 1))
+    (is (= 1 @b))
     (reset! a (r/completed 2))
-    (is (= @b 2))
+    (is (= 2 @b))
     (is (r/complete? b))
     (reset! a 3)
-    (is (= @b 2))
+    (is (= 2 @b))
     (reset! a (r/completed 4))
-    (is (= @b 2))))
+    (is (= 2 @b))))
 
 (deftest test-completed-events
   (async done
     (let [e (r/events)]
       (go (<! (deliver! e 1))
-          (is (= @e 1))
+          (is (= 1 @e))
           (<! (deliver! e (r/completed 2)))
-          (is (= @e 2))
+          (is (= 2 @e))
           (is (r/complete? e))
           (<! (deliver! e 3))
-          (is (= @e 2))
+          (is (= 2 @e))
           (done)))))
 
 (deftest test-completed-initialized
   (async done
     (let [e (r/events (r/completed 1))]
       (is (realized? e))
-      (is (= @e 1))
+      (is (= 1 @e))
       (is (r/complete? e))
       (go (<! (deliver! e 2))
-          (is (= @e 1))
+          (is (= 1 @e))
           (done)))))
 
 (deftest test-completed-derived
@@ -142,12 +142,12 @@
     (let [e (r/events)
           m (r/map inc e)]
       (go (<! (deliver! e 1))
-          (is (= @m 2))
+          (is (= 2 @m))
           (<! (deliver! e (r/completed 2)))
-          (is (= @m 3))
+          (is (= 3 @m))
           (is (r/complete? m))
           (<! (deliver! e 3))
-          (is (= @m 3))
+          (is (= 3 @m))
           (done)))))
 
 (deftest test-completed-channel
@@ -155,11 +155,11 @@
     (let [e (r/events)]
       (go (>! (r/port e) 1)
           (<! (timeout 20))
-          (is (= @e 1))
+          (is (= 1 @e))
           (is (not (r/complete? e)))
           (close! (r/port e))
           (<! (timeout 20))
-          (is (= @e 1))
+          (is (= 1 @e))
           (is (r/complete? e))
           (done)))))
 
@@ -169,7 +169,7 @@
           ch (chan 1)]
       (r/subscribe e ch)
       (go (r/deliver e :foo)
-          (is (= (<! ch) :foo))
+          (is (= :foo (<! ch)))
           (done)))))
 
 (deftest test-sink-close
@@ -188,9 +188,9 @@
           e2 (r/events)
           m (r/merge e1 e2)]
       (go (<! (deliver! e1 1))
-          (is (= @m 1))
+          (is (= 1 @m))
           (<! (deliver! e2 2))
-          (is (= @m 2))
+          (is (= 2 @m))
           (done)))))
 
 (deftest test-merge-close
@@ -200,11 +200,11 @@
           m (r/merge e1 e2)]
       (go (>! (r/port e1) 1)
           (<! (timeout 20))
-          (is (= @m 1))
+          (is (= 1 @m))
           (close! (r/port e1))
           (>! (r/port e2) 2)
           (<! (timeout 20))
-          (is (= @m 2))
+          (is (= 2 @m))
           (done)))))
 
 (deftest test-zip
@@ -214,11 +214,11 @@
           z (r/zip e1 e2)]
       (go (<! (deliver! e1 1))
           (<! (deliver! e2 2))
-          (is (= @z [1 2]))
+          (is (= [1 2] @z))
           (<! (deliver! e1 3))
-          (is (= @z [3 2]))
+          (is (= [3 2] @z))
           (<! (deliver! e2 4))
-          (is (= @z [3 4]))
+          (is (= [3 4] @z))
           (done)))))
 
 (deftest test-zip-close
@@ -229,11 +229,11 @@
       (go (>! (r/port e1) 1)
           (>! (r/port e2) 2)
           (<! (timeout 40))
-          (is (= @z [1 2]))
+          (is (= [1 2] @z))
           (close! (r/port e1))
           (>! (r/port e2) 3)
           (<! (timeout 20))
-          (is (= @z [1 3]))
+          (is (= [1 3] @z))
           (done)))))
 
 (deftest test-transform
@@ -277,7 +277,7 @@
           e (r/mapcat (comp list +) s1 s2)]
       (go (<! (deliver! s1 2))
           (<! (deliver! s2 3))
-          (is (= @e 5))
+          (is (= 5 @e))
           (done)))))
 
 (deftest test-filter
@@ -287,7 +287,7 @@
       (go (<! (deliver! s 1))
           (is (not (realized? e)))
           (<! (deliver! s 2 3))
-          (is (= @e 2))
+          (is (= 2 @e))
           (done)))))
 
 (deftest test-remove
@@ -297,7 +297,7 @@
       (go (<! (deliver! s 0))
           (is (not (realized? e)))
           (<! (deliver! s 1 2))
-          (is (= @e 1))
+          (is (= 1 @e))
           (done)))))
 
 (deftest test-reduce-no-init
@@ -307,11 +307,11 @@
       (go (is (not (realized? e)))
           (<! (deliver! s 1))
           (is (realized? e))
-          (is (= @e 1))
+          (is (= 1 @e))
           (<! (deliver! s 2))
-          (is (= @e 3))
+          (is (= 3 @e))
           (<! (deliver! s 3 4))
-          (is (= @e 10))
+          (is (= 10 @e))
           (done)))))
 
 (deftest test-reduce-init
@@ -319,11 +319,11 @@
     (let [s (r/events)
           e (r/reduce + 0 s)]
       (is (realized? e))
-      (is (= @e 0))
+      (is (= 0 @e))
       (go (<! (deliver! s 1))
-          (is (= @e 1))
+          (is (= 1 @e))
           (<! (deliver! s 2 3))
-          (is (= @e 6))
+          (is (= 6 @e))
           (done)))))
 
 (deftest test-reduce-init-persists
@@ -331,7 +331,7 @@
     (let [s (r/events)
           e (r/map inc (r/reduce + 0 s))]
       (go (<! (timeout 20))
-          (is (= @e 1))
+          (is (= 1 @e))
           (done)))))
 
 (deftest test-buffer-unlimited
@@ -340,9 +340,9 @@
           b (r/buffer s)]
       (is (empty? @b))
       (go (<! (deliver! s 1))
-          (is (= @b [1]))
+          (is (= [1] @b))
           (<! (deliver! s 2 3 4 5))
-          (is (= @b [1 2 3 4 5]))
+          (is (= [1 2 3 4 5] @b))
           (done)))))
 
 (deftest test-buffer-limited
@@ -351,9 +351,9 @@
           b (r/buffer 3 s)]
       (is (empty? @b))
       (go (<! (deliver! s 1))
-          (is (= @b [1]))
+          (is (= [1] @b))
           (<! (deliver! s 2 3 4 5))
-          (is (= @b [3 4 5]))
+          (is (= [3 4 5] @b))
           (done)))))
 
 (deftest test-buffer-smallest
@@ -361,7 +361,7 @@
     (let [s (r/events)
           b (r/buffer 1 s)]
       (go (<! (deliver! s 2 3 4 5))
-          (is (= @b [5]))
+          (is (= [5] @b))
           (done)))))
 
 (deftest test-uniq
@@ -378,11 +378,11 @@
   (async done
     (let [e (r/events)
           c (r/count e)]
-      (go (is (= @c 0))
+      (go (is (= 0 @c))
           (<! (deliver! e 1))
-          (is (= @c 1))
+          (is (= 1 @c))
           (<! (deliver! e 2 3))
-          (is (= @c 3))
+          (is (= 3 @c))
           (done)))))
 
 (deftest test-cycle
@@ -403,8 +403,8 @@
           e (r/constantly 1 s)
           a (r/reduce + 0 e)]
       (go (<! (deliver! s 2 4 5))
-          (is (= @e 1))
-          (is (= @a 3))
+          (is (= 1 @e))
+          (is (= 3 @a))
           (done)))))
 
 (deftest test-throttle
@@ -413,12 +413,12 @@
           e (r/throttle 100 s)]
       (go (r/deliver s 1 2)
           (<! (timeout 20))
-          (is (= @e 1))
+          (is (= 1 @e))
           (<! (timeout 101))
           (r/deliver s 3)
           (<! (timeout 50))
           (r/deliver s 4)
-          (is (= @e 3))
+          (is (= 3 @e))
           (done)))))
 
 (deftest test-sample
@@ -426,11 +426,11 @@
     (let [a (atom 0)
           s (r/sample 100 a)]
       (go (<! (timeout 120))
-          (is (= @s 0))
+          (is (= 0 @s))
           (swap! a inc)
-          (is (= @s 0))
+          (is (= 0 @s))
           (<! (timeout 120))
-          (is (= @s 1))
+          (is (= 1 @s))
           (done)))))
 
 (deftest test-sample-completed
@@ -441,11 +441,11 @@
       (go (<! (timeout 120))
           (is (realized? s))
           (is (not (r/complete? s)))
-          (is (= @s 0))
+          (is (= 0 @s))
           (reset! a (r/completed 1))
           (<! (timeout 120))
           (is (r/complete? s))
-          (is (= @s 1))
+          (is (= 1 @s))
           (done)))))
 
 (deftest test-dispose
@@ -454,10 +454,10 @@
           s (r/events)
           e (r/map #(reset! a %) s)]
       (go (<! (deliver! s 1))
-          (is (= @a 1))
+          (is (= 1 @a))
           (r/dispose e)
           (<! (deliver! s 2))
-          (is (= @a 1))
+          (is (= 1 @a))
           (done)))))
 
 (deftest test-wait
@@ -476,11 +476,11 @@
           e2 (r/events)
           j (r/join e1 e2)]
       (go (<! (deliver! e1 1))
-          (is (= @j 1))
+          (is (= 1 @j))
           (<! (deliver! e1 (r/completed 2)))
-          (is (= @j 2))
+          (is (= 2 @j))
           (<! (deliver! e2 3))
-          (is (= @j 3))
+          (is (= 3 @j))
           (done)))))
 
 (deftest test-join-blocking
@@ -491,11 +491,11 @@
           s (r/reduce + j)]
       (go (<! (deliver! e1 1))
           (<! (deliver! e2 3))
-          (is (= @j 1))
-          (is (= @s 1))
+          (is (= 1 @j))
+          (is (= 1 @s))
           (<! (deliver! e1 (r/completed 2)))
-          (is (= @j 3))
-          (is (= @s 6))
+          (is (= 3 @j))
+          (is (= 6 @s))
           (done)))))
 
 (deftest test-join-complete
@@ -505,7 +505,7 @@
           j (r/join e1 e2)]
       (go (<! (deliver! e1 (r/completed 1)))
           (<! (deliver! e2 (r/completed 2)))
-          (is (= @j 2))
+          (is (= 2 @j))
           (is (r/complete? j))
           (done)))))
 
@@ -515,7 +515,7 @@
       (go (<! (timeout 60))
           (is (realized? j))
           (is (r/complete? j))
-          (is (= @j 3))
+          (is (= 3 @j))
           (done)))))
 
 (deftest test-flatten
@@ -527,12 +527,12 @@
       (go (<! (deliver! es e1))
           (<! (deliver! e1 1))
           (is (realized? f))
-          (is (= @f 1))
+          (is (= 1 @f))
           (<! (deliver! es e2))
           (<! (deliver! e2 2))
-          (is (= @f 2))
+          (is (= 2 @f))
           (<! (deliver! e1 3))
-          (is (= @f 3))
+          (is (= 3 @f))
           (done)))))
 
 (deftest test-flatten-complete
