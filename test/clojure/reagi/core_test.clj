@@ -410,13 +410,13 @@
   (testing "basic usage"
     (let [a (atom 0)
           t0 (System/currentTimeMillis)
-          s (r/sample 100 a)]
+          s (r/sample 250 a)]
       (is (= (deref! s) 0))
       (swap! a inc)
       (is (= (deref! s) 0))
       (is (eventually (= (deref! s) 1)))
       (let [t1 (System/currentTimeMillis)]
-        (is (<= 100 (- t1 t0))))))
+        (is (<= 250 (- t1 t0))))))
   (testing "completed"
     (let [a (atom 0)
           b (r/behavior @a)

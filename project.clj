@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.3.465"]
-                 [org.clojure/clojurescript "1.7.28"]]
+                 [org.clojure/clojurescript "1.7.28"]
+                 [eftest "0.5.3"][clj-async-test "0.0.5"]]
   :plugins [[lein-codox "0.10.4"]
             [lein-cljsbuild "1.1.7"]
             [lein-eftest "0.5.3"]]
@@ -15,6 +16,7 @@
   :cljsbuild
   {:builds [{:source-paths ["src/cljc"]
              :compiler {:output-to "target/main.js"}}]}
+  :eftest {:capture-output? false}
   :profiles
   {:1.7  {}
    :1.8  {:dependencies [[org.clojure/clojure "1.8.0"]
