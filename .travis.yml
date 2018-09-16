@@ -43,20 +43,11 @@ matrix:
       env:
         - CLJ_PROFILES=1.7:1.8:1.9:1.10
         - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
-    - jdk: openjdk-ea
-      before_install: *fix_certs
-      env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
     - jdk: oraclejdk8
       env:
         - CLJ_PROFILES=1.7:1.8:1.9:1.10
         - CLJS_PROFILES=1.7:1.8:1.9:1.10
     - jdk: oraclejdk10
-      env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
-    - jdk: oraclejdk-ea
       env:
         - CLJ_PROFILES=1.7:1.8:1.9:1.10
         - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
