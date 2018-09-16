@@ -409,24 +409,27 @@
 (deftest test-sample
   (testing "basic usage"
     (let [a (atom 0)
+          t0 (System/currentTimeMillis)
           s (r/sample 100 a)]
       (is (= (deref! s) 0))
       (swap! a inc)
       (is (= (deref! s) 0))
-      (Thread/sleep 120)
-      (is (= (deref! s) 1))))
+      (is (eventually (= (deref! s) 1)))
+      (let [t1 (System/currentTimeMillis)]
+        (is (<= 100 (- t1 t0))))))
   (testing "completed"
     (let [a (atom 0)
           b (r/behavior @a)
+          t0 (System/currentTimeMillis)
           s (r/sample 100 b)]
-      (Thread/sleep 120)
-      (is (realized? s))
-      (is (not (r/complete? s)))
+      (is (eventually (realized? s)))
+      (is (lastingly (not (r/complete? s))))
       (is (= @s 0))
       (reset! a (r/completed 1))
-      (Thread/sleep 120)
-      (is (r/complete? s))
-      (is (= @s 1))))
+      (is (eventually (r/complete? s)))
+      (is (eventually (= @s 1)))
+      (let [t1 (System/currentTimeMillis)]
+        (is (<= 100 (- t1 t0))))))
   (testing "thread ends if stream GCed"
     (let [a (atom false)]
       (r/sample 100 (r/behavior (reset! a true)))
@@ -437,18 +440,19 @@
     (let [a (atom false)
           s (r/sample 100 (r/behavior (reset! a true)))]
       (System/gc)
-      (Thread/sleep 100)
       (reset! a false)
       (is (eventually (= @a true)))
       s)))                              ; Prevent s from getting collected
 
 (deftest test-wait
-  (let [w (r/wait 100)]
+  (let [w (r/wait 100)
+        t0 (System/currentTimeMillis)]
     (is (not (realized? w)))
     (is (not (r/complete? w)))
-    (Thread/sleep 110)
-    (is (not (realized? w)))
-    (is (eventually (r/complete? w)))))
+    (is (eventually (r/complete? w)))
+    (is (lastingly (not (realized? w))))
+    (let [t1 (System/currentTimeMillis)]
+      (is (<= 100 (- t1 t0))))))
 
 (deftest test-join
   (testing "basic sequence"
