@@ -5,7 +5,7 @@ script:
   - echo travis_fold:start:get_deps
   - lein with-profile test:$CLJ_PROFILES:$CLJS_PROFILES deps
   - echo travis_fold:end:get_deps
-  - lein with-profile $CLJ_PROFILES test
+  - lein with-profile $CLJ_PROFILES eftest
   - lein with-profile $CLJS_PROFILES test-cljs
 matrix:
   include:

@@ -7,7 +7,8 @@
                  [org.clojure/core.async "0.3.465"]
                  [org.clojure/clojurescript "1.7.28"]]
   :plugins [[lein-codox "0.10.4"]
-            [lein-cljsbuild "1.1.7"]]
+            [lein-cljsbuild "1.1.7"]
+            [lein-eftest "0.5.3"]]
   :source-paths ["src/cljc"]
   :test-paths ["test/clojure"]
   :codox {:sources ["src/cljc"]}

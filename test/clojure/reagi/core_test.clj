@@ -45,7 +45,7 @@
   (let [d (r/delta)]
     (Thread/sleep 110)
     (is (> @d 0.1))
-    (is (< @d 0.2))))
+    (is (< @d 0.5))))
 
 (deftest test-boxed
   (is (= (r/unbox 1) 1))
@@ -74,7 +74,7 @@
           t0 (System/currentTimeMillis)]
       (is (= (deref e 100 :missing) :missing))
       (let [t1 (System/currentTimeMillis)]
-        (is (<= 100 (- t1 t0) 150)))))
+        (is (<= 100 (- t1 t0) 250)))))
   (testing "initial value"
     (let [e (r/events 1)]
       (is (realized? e))
