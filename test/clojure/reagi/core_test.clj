@@ -347,13 +347,13 @@
 
 (deftest test-throttle
   (let [s (r/events)
-        e (r/throttle 100 s)]
+        e (r/throttle 500 s)]
     (r/deliver s 1 2)
     (is (eventually (= (deref! e) 1)))
     (is (lastingly (= (deref! e) 1)))
-    (Thread/sleep 101)
+    (Thread/sleep 501)
     (r/deliver s 3)
-    (Thread/sleep 50)
+    (Thread/sleep 100)
     (r/deliver s 4)
     (is (eventually (= (deref! e) 3)))
     (is (lastingly (= (deref! e) 3)))))
