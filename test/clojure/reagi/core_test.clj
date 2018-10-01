@@ -472,17 +472,19 @@
          (r/deliver e2 3)
          (is (eventually (= 3 (deref! j))))))))
   (testing "blocking"
-    (let [e1 (r/events)
-          e2 (r/events)
-          j  (r/join e1 e2)
-          s  (r/reduce + j)]
-      (r/deliver e1 1)
-      (r/deliver e2 3)
-      (is (eventually (= 1 (deref! j))))
-      (is (= (deref! s) 1))
-      (r/deliver e1 (r/completed 2))
-      (is (eventually (= 3 (deref! j))))
-      (is (eventually (= 6 (deref! s))))))
+    (r/with-sync-context
+      (let [e1 (r/events)
+            e2 (r/events)
+            j  (r/join e1 e2)
+            s  (r/reduce + j)]
+        (r/after-setup
+         (r/deliver e1 1)
+         (r/deliver e2 3)
+         (is (eventually (= 1 (deref! j))))
+         (is (= (deref! s) 1))
+         (r/deliver e1 (r/completed 2))
+         (is (eventually (= 3 (deref! j))))
+         (is (eventually (= 6 (deref! s))))))))
   (testing "complete"
     (let [e1 (r/events)
           e2 (r/events)
