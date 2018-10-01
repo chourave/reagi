@@ -322,13 +322,15 @@
     (is (eventually (= 3 (deref! e))))))
 
 (deftest test-count
-  (let [e (r/events)
-        c (r/count e)]
-    (is (= 0 (deref! c)))
-    (r/deliver e 1)
-    (is (eventually (= 1 (deref! c))))
-    (r/deliver e 2 3)
-    (is (eventually (= 3 (deref! c))))))
+  (r/with-sync-context
+    (let [e (r/events)
+          c (r/count e)]
+      (r/after-setup
+       (is (= 0 (deref! c)))
+       (r/deliver e 1)
+       (is (eventually (= 1 (deref! c))))
+       (r/deliver e 2 3)
+       (is (eventually (= 3 (deref! c))))))))
 
 (deftest test-cycle
   (let [s (r/events)
