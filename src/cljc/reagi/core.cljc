@@ -95,7 +95,7 @@
     "Return a write-only core.async channel. Any elements send to the port will
     be distributed to the listener channels in parallel. Each listener must
     accept before the next item is distributed.")
-  (listen [ob ch]
+  (listen [ob ch] [ob ch context]
     "Add a listener channel to the observable. The channel will be closed
     when the port of the observable is closed. Returns the channel.
 
@@ -176,6 +176,50 @@
        (unbox hd)
        js/undefined)))
 
+(def ^:dynamic *default-context* nil)
+
+(defprotocol ^:no-doc BuildContext
+  (setting-up [x])
+  (ready [x]))
+
+(defprotocol ^:no-doc Ready
+  (ready? [x])
+  (when-ready [x f]))
+
+(deftype BuildSyncContext [count]
+  BuildContext
+  (setting-up [_] (swap! count inc))
+  (ready [_] (swap! count dec))
+
+  Ready
+  (when-ready [_ f]
+    (let [notify (delay (f))]
+      (add-watch
+       count
+       (gensym)
+       (fn [key _ _ n]
+         (when (zero? n)
+           (remove-watch count key)
+           @notify))))
+    (swap! count identity)))
+
+#?(:clj (ns-unmap *ns* '->BuildSyncContext))
+
+(defmacro after-setup [& body]
+  `(when-ready *default-context* (fn [] ~@body)))
+
+(defn build-sync-context []
+  (BuildSyncContext. (atom 0)))
+
+(defmacro with-sync-context [& body]
+  `(binding [*default-context* (build-sync-context)]
+     ~@body))
+
+(extend-type nil
+  BuildContext
+  (setting-up [_])
+  (ready [_]))
+
 (defprotocol ^:no-doc Disposable
   (dispose [x]
     "Clean up any resources an object has before it goes out of scope. In
@@ -202,9 +246,13 @@
 
   Observable
   (port [_] ch)
-  (listen [_ channel]
+  (listen [this channel]
+    (listen this channel *default-context*))
+  (listen [_ channel context]
+    (setting-up context)
     (go (if-let [hd @head] (>! channel hd))
-        (a/tap mult channel))
+        (a/tap mult channel)
+        (ready context))
     channel)
 
   Signal
@@ -276,19 +324,25 @@
 
   The events from the stream cannot include nil. The channel will be closed when
   the event stream is complete."
-  [stream channel]
-  (let [ch (a/chan 1 (core/map unbox))]
-    (a/pipe ch channel)
-    (listen stream ch))
-  (depend-on channel [stream])
-  channel)
+  ([stream channel] (subscribe stream channel *default-context*))
+  ([stream channel context]
+   (let [ch (a/chan 1 (core/map unbox))]
+     (a/pipe ch channel)
+     (listen stream ch context))
+   (depend-on channel [stream])
+   channel))
 
 (defn- close-all! [chs]
   (doseq [ch chs]
     (a/close! ch)))
 
+(defn- split-context [streams]
+  [(some #(and (satisfies? BuildContext %) %) streams)
+   (core/filter #(satisfies? Observable %) streams)])
+
 (defn- listen-all [streams]
-  (mapv #(listen % (a/chan)) streams))
+  (let [[context streams] (split-context streams)]
+    (mapv #(listen % (a/chan) context) streams)))
 
 (defn- connect-port [stream f & args]
   (apply f (concat args [(port stream)])))
@@ -297,7 +351,8 @@
   "Combine multiple streams into one. All events from the input streams are
   pushed to the returned stream."
   [& streams]
-  (let [chs (listen-all streams)]
+  (let [chs (listen-all streams)
+        [_ streams] (split-context streams)]
     (doto (events)
       (connect-port a/pipe (a/merge chs))
       (on-dispose #(close-all! chs))
@@ -322,7 +377,8 @@
   vector will be pushed to the returned stream containing the latest events
   of all input streams."
   [& streams]
-  (let [chs (listen-all streams)]
+  (let [chs (listen-all streams)
+        [_ streams] (split-context streams)]
     (doto (events)
       (connect-port zip-ch chs)
       (on-dispose #(close-all! chs))
@@ -330,41 +386,57 @@
 
 (defn transform
   "Transform a stream through a transducer."
-  [xf stream]
-  (let [ch (listen stream (a/chan 1 (comp (core/map unbox) xf)))]
-    (doto (events)
-      (connect-port a/pipe ch)
-      (on-dispose #(a/close! ch))
-      (depend-on [stream]))))
+  ([xf stream] (transform xf stream *default-context*))
+  ([xf stream context]
+   (let [ch (listen stream (a/chan 1 (comp (core/map unbox) xf) context))]
+     (doto (events)
+       (connect-port a/pipe ch)
+       (on-dispose #(a/close! ch))
+       (depend-on [stream])))))
+
+(defn- mapcat*
+  [f stream context]
+  (transform (core/mapcat f) stream context))
+
+(defn- zipmap*
+  [map f streams]
+  (let [[context] (split-context streams)]
+    (map (partial apply f) (apply zip streams) context)))
 
 (defn mapcat
   "Mapcat a function over a stream."
-  ([f stream]
-   (transform (core/mapcat f) stream))
-  ([f stream & streams]
-   (mapcat (partial apply f) (apply zip stream streams))))
+  [f & streams]
+  (zipmap* mapcat* f streams))
+
+(defn map*
+  ([f stream context]
+   (transform (core/map f) stream context)))
 
 (defn map
   "Map a function over a stream."
-  ([f stream]
-   (transform (core/map f) stream))
-  ([f stream & streams]
-   (map (partial apply f) (apply zip stream streams))))
+  [f & streams]
+  (zipmap* map* f streams))
 
 (defn filter
   "Filter a stream by a predicate."
-  [pred stream]
-  (transform (core/filter pred) stream))
+  ([pred stream]
+   (filter pred stream *default-context*))
+  ([pred stream context]
+   (transform (core/filter pred) stream context)))
 
 (defn remove
   "Remove all items in a stream the predicate matches."
-  [pred stream]
-  (filter (complement pred) stream))
+  ([pred stream]
+   (remove pred stream *default-context*))
+  ([pred stream context]
+   (filter (complement pred) stream context)))
 
 (defn constantly
   "Constantly map the same value over an event stream."
-  [value stream]
-  (map (core/constantly value) stream))
+  ([value stream]
+   (constantly value stream *default-context*))
+  ([value stream context]
+   (map (core/constantly value) stream context)))
 
 (defn- reduce-ch [f init in out]
   (go-loop [acc init]
@@ -380,23 +452,29 @@
   "Create a new stream by applying a function to the previous return value and
   the current value of the source stream."
   ([f stream]
-     (reduce f no-value stream))
+   (reduce f no-value stream))
   ([f init stream]
-     (let [ch (listen stream (a/chan))]
-       (doto (events init)
-         (connect-port reduce-ch f init ch)
-         (on-dispose #(a/close! ch))
-         (depend-on [stream])))))
+   (reduce f init stream *default-context*))
+  ([f init stream context]
+   (let [ch (listen stream (a/chan) context)]
+     (doto (events init)
+       (connect-port reduce-ch f init ch)
+       (on-dispose #(a/close! ch))
+       (depend-on [stream])))))
 
 (defn count
   "Return an accumulating count of the items in a stream."
-  [stream]
-  (reduce (fn [x _] (inc x)) 0 stream))
+  ([stream]
+   (count stream *default-context*))
+  ([stream context]
+   (reduce (fn [x _] (inc x)) 0 stream context)))
 
 (defn accum
   "Change an initial value based on an event stream of functions."
-  [init stream]
-  (reduce #(%2 %1) init stream))
+  ([init stream]
+   (accum init stream *default-context*))
+  ([init stream context]
+   (reduce #(%2 %1) init stream context)))
 
 (def ^:private empty-queue
   #?(:clj  clojure.lang.PersistentQueue/EMPTY
@@ -407,24 +485,33 @@
   in which case the buffer will contain only the last n items. It's recommended
   that a buffer size is specified, otherwise the buffer will grow without limit."
   ([stream]
-     (reduce conj empty-queue stream))
-  ([n stream]
-     {:pre [(integer? n) (pos? n)]}
-     (reduce (fn [q x] (conj (if (>= (core/count q) n) (pop q) q) x))
-             empty-queue
-             stream)))
+   (buffer stream *default-context*))
+  ([stream-or-n context-or-stream]
+   (if (satisfies? Observable context-or-stream)
+     (buffer stream-or-n context-or-stream *default-context*)
+     (reduce conj empty-queue stream-or-n context-or-stream)))
+  ([n stream context]
+   {:pre [(integer? n) (pos? n)]}
+   (reduce (fn [q x] (conj (if (>= (core/count q) n) (pop q) q) x))
+           empty-queue
+           stream
+           context)))
 
 (defn uniq
   "Remove any successive duplicates from the stream."
-  [stream]
-  (transform (distinct) stream))
+  ([stream]
+   (uniq stream *default-context*))
+  ([stream context]
+   (transform (distinct) stream context)))
 
 (defn cycle
   "Incoming events cycle a sequence of values. Useful for switching between
   states."
-  [values stream]
-  (->> (reduce (fn [xs _] (next xs)) (core/cycle values) stream)
-       (map first)))
+  ([values stream]
+   (cycle values stream *default-context*))
+  ([values stream context]
+   (->> (reduce (fn [xs _] (next xs)) (core/cycle values) stream context)
+        (map first))))
 
 (defn- time-ms []
   #?(:clj  (System/currentTimeMillis)
@@ -442,12 +529,14 @@
 (defn throttle
   "Remove any events in a stream that occur too soon after the prior event.
   The timeout is specified in milliseconds."
-  [timeout-ms stream]
-  (let [ch (listen stream (a/chan))]
-    (doto (events)
-      (connect-port throttle-ch timeout-ms ch)
-      (on-dispose #(a/close! ch))
-      (depend-on [stream]))))
+  ([timeout-ms stream]
+   (throttle timeout-ms stream *default-context*))
+  ([timeout-ms stream context]
+   (let [ch (listen stream (a/chan) context)]
+     (doto (events)
+       (connect-port throttle-ch timeout-ms ch)
+       (on-dispose #(a/close! ch))
+       (depend-on [stream])))))
 
 (defn- run-sampler [ref interval stop out]
   (go (loop []
@@ -490,7 +579,8 @@
   "Join several streams together. Events are delivered from the first stream
   until it is completed, then the next stream, until all streams are complete."
   [& streams]
-  (let [chs (listen-all streams)]
+  (let [chs (listen-all streams)
+        [_ streams] (split-context streams)]
     (doto (events)
       (connect-port join-ch chs)
       (on-dispose #(close-all! chs))
@@ -514,10 +604,12 @@
 (defn flatten
   "Flatten a stream of streams into a stream that contains all the values of
   its components."
-  [stream]
-  (let [ch    (listen stream (a/chan))
-        valve (a/chan)]
-    (doto (events)
-      (connect-port flatten-ch ch valve)
-      (on-dispose #(a/close! valve))
-      (depend-on [stream]))))
+  ([stream]
+   (flatten stream *default-context*))
+  ([stream context]
+   (let [ch    (listen stream (a/chan) context)
+         valve (a/chan)]
+     (doto (events)
+       (connect-port flatten-ch ch valve)
+       (on-dispose #(a/close! valve))
+       (depend-on [stream])))))
