@@ -135,15 +135,17 @@
       (r/deliver e 2)
       (is (lastingly (= 1 (deref! e))))))
   (testing "derived events"
-    (let [e (r/events)
-          m (r/map inc e)]
-      (r/deliver e 1)
-      (is (eventually (= 2 (deref! m))))
-      (r/deliver e (r/completed 2))
-      (is (eventually (= 3 (deref! m))))
-      (is (r/complete? m))
-      (r/deliver e 3)
-      (is (lastingly (= 3 (deref! m))))))
+    (r/with-sync-context
+      (let [e (r/events)
+            m (r/map inc e)]
+        (r/after-setup
+         (r/deliver e 1)
+         (is (eventually (= 2 (deref! m))))
+         (r/deliver e (r/completed 2))
+         (is (eventually (= 3 (deref! m))))
+         (is (r/complete? m))
+         (r/deliver e 3)
+         (is (lastingly (= 3 (deref! m))))))))
   (testing "closed channel"
     (let [e (r/events)]
       (>!! (r/port e) 1)
