@@ -460,15 +460,17 @@
 
 (deftest test-join
   (testing "basic sequence"
-    (let [e1 (r/events)
-          e2 (r/events)
-          j  (r/join e1 e2)]
-      (r/deliver e1 1)
-      (is (eventually (= 1 (deref! j))))
-      (r/deliver e1 (r/completed 2))
-      (is (eventually (= 2 (deref! j))))
-      (r/deliver e2 3)
-      (is (eventually (= 3 (deref! j))))))
+    (r/with-sync-context
+      (let [e1 (r/events)
+            e2 (r/events)
+            j  (r/join e1 e2)]
+        (r/after-setup
+         (r/deliver e1 1)
+         (is (eventually (= 1 (deref! j))))
+         (r/deliver e1 (r/completed 2))
+         (is (eventually (= 2 (deref! j))))
+         (r/deliver e2 3)
+         (is (eventually (= 3 (deref! j))))))))
   (testing "blocking"
     (let [e1 (r/events)
           e2 (r/events)
