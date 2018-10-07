@@ -1,53 +1,59 @@
 dist: trusty
-sudo: false 
+sudo: required
 language: clojure
 script:
   - echo travis_fold:start:get_deps
-  - lein with-profile test:$CLJ_PROFILES:$CLJS_PROFILES deps
+  - '[ -z "$CLJ_PROFILES" ] || lein with-profile "test:$CLJ_PROFILES" deps'
+  - '[ -z "$CLJS_PROFILES" ] || lein with-profile "$CLJS_PROFILES" deps'
+  - '[ -z "AFTER_GET_DEPS" ] || $AFTER_GET_DEPS'
   - echo travis_fold:end:get_deps
-  - lein with-profile $CLJ_PROFILES test
-  - lein with-profile $CLJS_PROFILES test-cljs
+  - '[ -z "$CLJ_PROFILES" ] || lein with-profile "$CLJ_PROFILES" test'
+  - '[ -z "$CLJS_PROFILES" ] || lein with-profile "$CLJS_PROFILES" test-cljs'
 matrix:
   include:
     - addons:
         apt:
           packages:
             - openjdk-6-jdk
+      lein: 2.7.1
       jdk: openjdk6
-      before_install: jdk_switcher use openjdk6 # Needed because travis tries (and fails) to switch to jdk6 before insalling it
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9
-        - CLJS_PROFILES=1.7:1.8
+        - AFTER_GET_DEPS="jdk_switcher use openjdk6"
+        - LEIN_JVM_OPTS=-Dhttps.protocols=TLSv1.2
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9
+        - CLJS_PROFILES=
     - jdk: openjdk7
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9
-        - CLJS_PROFILES=1.7:1.8
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9
+        - CLJS_PROFILES=+cljs-1.7,+clj-1.7:+cljs-1.8,+clj-1.8
     - jdk: openjdk8
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7:1.8:1.9:1.10
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9:+clj-1.10
+        - CLJS_PROFILES=+cljs-1.7,+clj-1.7:+cljs-1.8,+clj-1.8:+cljs-1.9,+clj-1.9:+cljs-1.10,+clj-1.10
     - jdk: openjdk9
       before_install: &fix_certs
-        - rm "${JAVA_HOME}/lib/security/cacerts"
-        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+        - echo travis_fold:start:fix_java_certificates
+        - sudo rm "${JAVA_HOME}/lib/security/cacerts"
+        - sudo ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+        - echo travis_fold:start:fix_java_certificates
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9:+clj-1.10
+        - CLJS_PROFILES=+cljs-1.7,+clj-1.7,+with-xml:+cljs-1.8,+clj-1.8,+with-xml:+cljs-1.9,+clj-1.9,+with-xml:+cljs-1.10,+clj-1.10
     - jdk: openjdk10
       before_install: *fix_certs
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9:+clj-1.10
+        - CLJS_PROFILES=+cljs-1.7,+clj-1.7,+with-xml:+cljs-1.8,+with-xml:+cljs-1.9,+clj-1.9,+with-xml:+cljs-1.10,+clj-1.10
     - jdk: openjdk11
       before_install: *fix_certs
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.10
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9:+clj-1.10
+        - CLJS_PROFILES=+cljs-1.10,+clj-1.10
     - jdk: oraclejdk8
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7:1.8:1.9:1.10
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9:+clj-1.10
+        - CLJS_PROFILES=+cljs-1.7,+clj-1.7:+cljs-1.8,+clj-1.8:+cljs-1.9,+clj-1.9:+cljs-1.10,+clj-1.10
     - jdk: oraclejdk10
       env:
-        - CLJ_PROFILES=1.7:1.8:1.9:1.10
-        - CLJS_PROFILES=1.7,with-xml:1.8,with-xml:1.9,with-xml:1.10
+        - CLJ_PROFILES=+clj-1.7:+clj-1.8:+clj-1.9:+clj-1.10
+        - CLJS_PROFILES=+cljs-1.7,+clj-1.7,+with-xml:+cljs-1.8,+clj-1.8,+with-xml:+cljs-1.9,+clj-1.9,+with-xml:+cljs-1.10,+clj-1.10
