@@ -203,8 +203,11 @@
   Observable
   (port [_] ch)
   (listen [_ channel]
-    (go (if-let [hd @head] (>! channel hd))
-        (a/tap mult channel))
+    (if-let [hd @head]
+      (let [buf (a/chan)]
+        (a/tap mult buf)
+        (a/put! channel hd #(when % (a/pipe buf channel))))
+      (a/tap mult channel))
     channel)
 
   Signal
