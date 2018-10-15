@@ -541,7 +541,7 @@
          (r/deliver e1 1)
          (r/deliver e2 3)
          (is (eventually (= 1 (deref! j))))
-         (is (= (deref! s) 1))
+         (is (eventually (= 1 (deref! s))))
          (r/deliver e1 (r/completed 2))
          (is (eventually (= 3 (deref! j))))
          (is (eventually (= 6 (deref! s))))))))
